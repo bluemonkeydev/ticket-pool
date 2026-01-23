@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Ticket Allocation{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="page-header">
+        <h1>Event Dashboard</h1>
+        <a href="{{ url_for('events.create_event') }}" class="btn btn-primary">Create Event</a>
+    </div>
+
+    <section class="events-section">
+        <h2>Open Events</h2>
+        {% if open_events %}
+        <div class="events-grid">
+            {% for event in open_events %}
+            <div class="event-card">
+                <h3><a href="{{ url_for('events.event_detail', event_id=event.id) }}">{{ event.name }}</a></h3>
+                <p class="event-date">{{ event.event_date|datetime }}</p>
+                <p class="event-tickets">
+                    {{ event_stats[event.id].total_requested }} requested / {{ event.total_tickets }} available
+                    {% if event_stats[event.id].total_requested > event.total_tickets %}
+                    <span class="oversubscribed">(oversubscribed)</span>
+                    {% endif %}
+                </p>
+                <p class="event-submissions">{{ event_stats[event.id].submission_count }} {% if event_stats[event.id].submission_count == 1 %}person{% else %}people{% endif %} interested</p>
+                <p class="event-creator">Created by {{ creators[event.created_by] }}</p>
+                <div class="event-card-footer">
+                    <span class="status-badge status-open">Open</span>
+                    {% if user_submissions[event.id] %}
+                    <span class="badge badge-submitted">You've submitted</span>
+                    {% else %}
+                    <span class="badge badge-not-submitted">Not submitted</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="no-events">No open events at this time.</p>
+        {% endif %}
+    </section>
+
+    <section class="events-section">
+        <h2>Past Events</h2>
+        {% if past_events %}
+        <div class="events-grid">
+            {% for event in past_events %}
+            <div class="event-card event-past">
+                <h3><a href="{{ url_for('events.event_detail', event_id=event.id) }}">{{ event.name }}</a></h3>
+                <p class="event-date">{{ event.event_date|datetime }}</p>
+                <p class="event-creator">Created by {{ creators[event.created_by] }}</p>
+                <span class="status-badge status-{{ event.status }}">{{ event.status|capitalize }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="no-events">No past events.</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

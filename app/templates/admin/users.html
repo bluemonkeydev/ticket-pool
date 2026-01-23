@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Users - Ticket Allocation{% endblock %}
+
+{% block content %}
+<div class="admin-panel">
+    <div class="page-header">
+        <h1>Manage Users</h1>
+        <a href="{{ url_for('admin.add_user') }}" class="btn btn-primary">Add User</a>
+    </div>
+
+    <table class="users-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr class="{% if not user.is_active %}row-inactive{% endif %}">
+                <td>
+                    {{ user.name }}
+                    {% if user.is_admin %}<span class="badge badge-admin">Admin</span>{% endif %}
+                    {% if user.must_reset_password %}<span class="badge badge-pending">Pending Setup</span>{% endif %}
+                </td>
+                <td>{{ user.email }}</td>
+                <td>
+                    {% if user.is_active %}
+                    <span class="status-active">Active</span>
+                    {% else %}
+                    <span class="status-inactive">Inactive</span>
+                    {% endif %}
+                </td>
+                <td class="actions-cell">
+                    <a href="{{ url_for('admin.edit_user', user_id=user.id) }}" class="btn btn-secondary btn-sm">Edit</a>
+                    {% if user.id != current_user.id %}
+                    <form method="POST" action="{{ url_for('admin.toggle_user_active', user_id=user.id) }}" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm {% if user.is_active %}btn-warning{% else %}btn-success{% endif %}">
+                            {% if user.is_active %}Deactivate{% else %}Activate{% endif %}
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('admin.toggle_user_admin', user_id=user.id) }}" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-secondary">
+                            {% if user.is_admin %}Remove Admin{% else %}Make Admin{% endif %}
+                        </button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <p class="back-link">
+        <a href="{{ url_for('admin.index') }}">Back to Admin Panel</a>
+    </p>
+</div>
+{% endblock %}

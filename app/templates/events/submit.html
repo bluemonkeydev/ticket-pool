@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Submit Interest - {{ event.name }}{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h1>{% if existing %}Edit Your Interest{% else %}Submit Interest{% endif %}</h1>
+    <p class="form-subtitle">{{ event.name }}</p>
+
+    <form method="POST" class="form" id="submissionForm">
+        {{ form.hidden_tag() }}
+        {{ form.preferences(id="preferencesInput") }}
+
+        <div id="preferencesContainer">
+            <div class="form-group">
+                <label for="choice_0">How many tickets would you ideally like?</label>
+                <select id="choice_0" class="form-control preference-select" data-index="0">
+                    <option value="">Select...</option>
+                    {% for i in range(1, 9) %}
+                    <option value="{{ i }}">{{ i }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div id="preferencesSummary" class="preferences-summary" style="display: none;">
+            <strong>Your preferences:</strong> <span id="summaryText"></span>
+        </div>
+
+        {% for error in form.preferences.errors %}
+        <span class="error">{{ error }}</span>
+        {% endfor %}
+
+        <div class="form-group">
+            {{ form.notes.label }}
+            {{ form.notes(class="form-control", rows=3, placeholder="e.g., It's my kid's birthday, first time seeing this team, etc.") }}
+            {% for error in form.notes.errors %}
+            <span class="error">{{ error }}</span>
+            {% endfor %}
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="submitBtn" disabled>{% if existing %}Update{% else %}Submit{% endif %}</button>
+            <a href="{{ url_for('events.event_detail', event_id=event.id) }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const preferences = [];
+const container = document.getElementById('preferencesContainer');
+const preferencesInput = document.querySelector('input[name="preferences"]');
+const summaryDiv = document.getElementById('preferencesSummary');
+const summaryText = document.getElementById('summaryText');
+const submitBtn = document.getElementById('submitBtn');
+
+// Load existing preferences if editing
+{% if existing and existing.preferences %}
+const existingPrefs = "{{ existing.preferences }}".split(',').map(Number);
+{% else %}
+const existingPrefs = [];
+{% endif %}
+
+function updatePreferencesInput() {
+    preferencesInput.value = preferences.join(',');
+
+    if (preferences.length > 0 && preferences[preferences.length - 1] === 0) {
+        summaryDiv.style.display = 'block';
+        const nonZero = preferences.filter(p => p > 0);
+        summaryText.textContent = nonZero.join(' → ') + ' → 0 (won\'t attend)';
+        submitBtn.disabled = false;
+    } else {
+        summaryDiv.style.display = 'none';
+        submitBtn.disabled = true;
+    }
+}
+
+function addNextChoice(afterIndex, maxValue) {
+    const nextIndex = afterIndex + 1;
+
+    // Remove any existing choices after this one
+    const existingChoices = container.querySelectorAll('.form-group');
+    for (let i = existingChoices.length - 1; i > afterIndex; i--) {
+        existingChoices[i].remove();
+    }
+    preferences.length = afterIndex + 1;
+
+    if (maxValue === 0) {
+        updatePreferencesInput();
+        return;
+    }
+
+    // If only option is 0, auto-select it
+    if (maxValue === 1) {
+        preferences[nextIndex] = 0;
+        updatePreferencesInput();
+        return;
+    }
+
+    const div = document.createElement('div');
+    div.className = 'form-group';
+    div.innerHTML = `
+        <label for="choice_${nextIndex}">My next choice is:</label>
+        <select id="choice_${nextIndex}" class="form-control preference-select" data-index="${nextIndex}">
+            <option value="">Select...</option>
+            ${Array.from({length: maxValue}, (_, i) => maxValue - 1 - i).map(v =>
+                `<option value="${v}">${v === 0 ? '0 (I won\'t attend if I can\'t get at least ' + preferences[preferences.length-1] + ')' : v}</option>`
+            ).join('')}
+        </select>
+    `;
+    container.appendChild(div);
+
+    const newSelect = div.querySelector('select');
+    newSelect.addEventListener('change', handleSelectChange);
+
+    updatePreferencesInput();
+}
+
+function handleSelectChange(e) {
+    const select = e.target;
+    const index = parseInt(select.dataset.index);
+    const value = parseInt(select.value);
+
+    if (isNaN(value)) {
+        // Reset everything after this
+        preferences.length = index;
+        const existingChoices = container.querySelectorAll('.form-group');
+        for (let i = existingChoices.length - 1; i > index; i--) {
+            existingChoices[i].remove();
+        }
+        updatePreferencesInput();
+        return;
+    }
+
+    preferences[index] = value;
+    addNextChoice(index, value);
+}
+
+// Initialize first select
+document.getElementById('choice_0').addEventListener('change', handleSelectChange);
+
+// Load existing preferences on edit
+if (existingPrefs.length > 0) {
+    existingPrefs.forEach((pref, index) => {
+        if (index === 0) {
+            document.getElementById('choice_0').value = pref;
+            preferences[0] = pref;
+            if (pref > 0) {
+                addNextChoice(0, pref);
+            }
+        } else {
+            setTimeout(() => {
+                const select = document.getElementById(`choice_${index}`);
+                if (select) {
+                    select.value = pref;
+                    preferences[index] = pref;
+                    if (pref > 0) {
+                        addNextChoice(index, pref);
+                    } else {
+                        updatePreferencesInput();
+                    }
+                }
+            }, index * 10);
+        }
+    });
+}
+</script>
+{% endblock %}

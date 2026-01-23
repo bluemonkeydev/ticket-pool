@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Panel - Ticket Allocation{% endblock %}
+
+{% block content %}
+<div class="admin-panel">
+    <h1>Admin Panel</h1>
+
+    <div class="admin-sections">
+        <section class="admin-section">
+            <div class="section-header">
+                <h2>Users ({{ users|length }})</h2>
+                <a href="{{ url_for('admin.users') }}" class="btn btn-secondary btn-sm">Manage Users</a>
+            </div>
+            <ul class="admin-list">
+                {% for user in users[:5] %}
+                <li>
+                    {{ user.name }}
+                    {% if user.is_admin %}<span class="badge badge-admin">Admin</span>{% endif %}
+                    {% if not user.is_active %}<span class="badge badge-inactive">Inactive</span>{% endif %}
+                </li>
+                {% endfor %}
+                {% if users|length > 5 %}
+                <li class="more-link">... and {{ users|length - 5 }} more</li>
+                {% endif %}
+            </ul>
+        </section>
+
+        <section class="admin-section">
+            <div class="section-header">
+                <h2>Events ({{ events|length }})</h2>
+            </div>
+            <ul class="admin-list">
+                {% for event in events[:5] %}
+                <li>
+                    <a href="{{ url_for('events.event_detail', event_id=event.id) }}">{{ event.name }}</a>
+                    <span class="status-badge status-{{ event.status }}">{{ event.status }}</span>
+                    {% if current_user.is_admin %}
+                    <form method="POST" action="{{ url_for('admin.delete_event', event_id=event.id) }}" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-danger btn-xs" onclick="return confirm('Delete this event?')">Delete</button>
+                    </form>
+                    {% endif %}
+                </li>
+                {% endfor %}
+                {% if events|length > 5 %}
+                <li class="more-link">... and {{ events|length - 5 }} more</li>
+                {% endif %}
+            </ul>
+        </section>
+    </div>
+</div>
+{% endblock %}
