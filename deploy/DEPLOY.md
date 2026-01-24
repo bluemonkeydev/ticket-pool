@@ -107,8 +107,10 @@ docker compose exec web python -c "import sqlite3; conn = sqlite3.connect('/data
 
 ## 7. Initialize Database (First Time Only)
 
-The database will be created automatically on first run. If you need to reinitialize:
+The database will be created automatically on first run. To create an admin user:
 
 ```bash
-docker compose exec web python docker-init-db.py
+docker compose exec web python docker-init-db.py admin@example.com "Admin Name"
 ```
+
+The admin can then log in via magic link sent to their email.

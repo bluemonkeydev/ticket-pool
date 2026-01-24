@@ -13,14 +13,13 @@ from app.db import init_db, get_db
 from app.models import User
 
 def main():
-    if len(sys.argv) != 4:
-        print("Usage: python docker-init-db.py <admin_email> <admin_name> <temp_password>")
-        print("Example: python docker-init-db.py admin@company.com 'Admin User' temppass123")
+    if len(sys.argv) != 3:
+        print("Usage: python docker-init-db.py <admin_email> <admin_name>")
+        print("Example: python docker-init-db.py admin@company.com 'Admin User'")
         sys.exit(1)
 
     email = sys.argv[1]
     name = sys.argv[2]
-    password = sys.argv[3]
 
     app = create_app()
 
@@ -37,9 +36,9 @@ def main():
         if admin:
             print(f"Admin user already exists: {admin['email']}")
         else:
-            User.create(name=name, email=email.lower(), password=password, is_admin=True)
+            User.create(name=name, email=email.lower(), is_admin=True)
             print(f"Admin user created: {email}")
-            print("Note: This user will need to set a new password on first login.")
+            print("Login via magic link sent to this email.")
 
 if __name__ == '__main__':
     main()
