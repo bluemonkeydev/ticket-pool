@@ -137,3 +137,56 @@ Thanks,
     """
 
     return send_email(user.email, subject, body_html, body_text)
+
+
+def send_allocation_email(user, event, requested_tickets, allocated_tickets):
+    """Send an email notifying a user of their ticket allocation."""
+    app_name = current_app.config.get('APP_NAME', 'Ticket Pool')
+    app_url = current_app.config.get('APP_URL', '')
+
+    subject = f"{app_name} - Ticket Allocation for {event.name}"
+
+    req_word = "ticket" if requested_tickets == 1 else "tickets"
+    alloc_word = "ticket" if allocated_tickets == 1 else "tickets"
+
+    if allocated_tickets > 0:
+        message = f"Great news! You requested {requested_tickets} {req_word} and have been allocated <strong>{allocated_tickets} {alloc_word}</strong> for {event.name}."
+        message_text = f"Great news! You requested {requested_tickets} {req_word} and have been allocated {allocated_tickets} {alloc_word} for {event.name}."
+    else:
+        message = f"You requested {requested_tickets} {req_word}, but unfortunately we were unable to allocate any tickets for {event.name} this time."
+        message_text = message
+
+    event_url = f"{app_url}/events/{event.id}" if app_url else ""
+
+    body_html = f"""
+    <html>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <h2>Ticket Allocation Update</h2>
+        <p>Hi {user.name},</p>
+        <p>{message}</p>
+        <p><strong>Event:</strong> {event.name}</p>
+        <p><strong>Date:</strong> {event.event_date}</p>
+        {f'<p><a href="{event_url}" style="background-color: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">View Event Details</a></p>' if event_url else ''}
+        <br>
+        <p>Thanks,<br>{app_name}</p>
+    </body>
+    </html>
+    """
+
+    body_text = f"""
+Ticket Allocation Update
+
+Hi {user.name},
+
+{message_text}
+
+Event: {event.name}
+Date: {event.event_date}
+
+{f'View event details: {event_url}' if event_url else ''}
+
+Thanks,
+{app_name}
+    """
+
+    return send_email(user.email, subject, body_html, body_text)
