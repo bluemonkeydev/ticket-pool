@@ -1,113 +1,139 @@
 {% extends "base.html" %}
 
-{% block title %}{{ event.name }} - Ticket Allocation{% endblock %}
+{% block title %}{{ event.name }} - {{ config.APP_NAME }}{% endblock %}
 
 {% block content %}
-<div class="event-detail">
-    <div class="page-header">
-        <div>
-            <h1>{{ event.name }}</h1>
-            <p class="event-meta">
-                <span class="event-date">{{ event.event_date|datetime }}</span>
-                <span class="status-badge status-{{ event.status }}">{{ event.status|capitalize }}</span>
-            </p>
-        </div>
-        <div class="header-actions">
-            {% if event.is_open and (event.created_by == current_user.id or current_user.is_admin) %}
-            <a href="{{ url_for('events.edit_event', event_id=event.id) }}" class="btn btn-secondary">Edit Event</a>
-            <a href="{{ url_for('events.allocate', event_id=event.id) }}" class="btn btn-primary">Allocate Tickets</a>
-            {% elif event.is_finalized and (event.created_by == current_user.id or current_user.is_admin) %}
-            <form method="POST" action="{{ url_for('events.unfinalize_event', event_id=event.id) }}" style="display: inline;">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn-warning" onclick="return confirm('Un-finalize this event to make adjustments?')">Un-finalize</button>
-            </form>
-            {% endif %}
-        </div>
-    </div>
+<div class="page-wrapper">
+    <div class="page-container page-container--medium">
+        <a href="{{ url_for('events.dashboard') }}" class="back-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Back to Dashboard
+        </a>
 
-    <div class="event-info">
-        <p><strong>Total Tickets:</strong> {{ event.total_tickets }}</p>
-        <p><strong>Created by:</strong> {{ creator.name }}</p>
-        {% if event.notes %}
-        <p><strong>Notes:</strong> {{ event.notes }}</p>
-        {% endif %}
-    </div>
-
-    {% if event.is_open %}
-    <div class="your-interest-bar">
-        {% if user_submission %}
-        {% set prefs = parse_preferences(user_submission.preferences) %}
-        {% set non_zero = prefs|select('greaterthan', 0)|list %}
-        <span class="interest-label">Your interest:</span>
-        <span class="interest-prefs">{{ non_zero|join(' → ') }} → 0</span>
-        {% if user_submission.notes %}<span class="interest-notes" title="{{ user_submission.notes }}">(has notes)</span>{% endif %}
-        <span class="interest-actions">
-            <a href="{{ url_for('events.submit_interest', event_id=event.id) }}" class="btn btn-secondary btn-xs">Edit</a>
-            <form method="POST" action="{{ url_for('events.withdraw_interest', event_id=event.id) }}" style="display: inline;">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn-danger btn-xs" onclick="return confirm('Withdraw your interest?')">Withdraw</button>
-            </form>
-        </span>
-        {% else %}
-        <span class="interest-label">You haven't submitted interest yet.</span>
-        <a href="{{ url_for('events.submit_interest', event_id=event.id) }}" class="btn btn-primary btn-sm">Submit Interest</a>
-        {% endif %}
-    </div>
-    {% endif %}
-
-    <div class="submissions-section">
-        <div class="section-header">
-            <h2>All Submissions ({{ submissions|length }})</h2>
-            {% if event.is_open and event.created_by == current_user.id %}
-            <a href="{{ url_for('events.submit_for_user', event_id=event.id) }}" class="btn btn-secondary btn-sm">Add for User</a>
-            {% endif %}
-        </div>
-        {% if submissions %}
-        <div class="stats-bar">
-            <span>Total First Choice: {{ total_first_choice }}</span>
-            <span>Total Minimum: {{ total_min }}</span>
-            {% if event.is_finalized %}
-            <span>Total Allocated: {{ total_allocated }}</span>
-            {% endif %}
-        </div>
-        <table class="submissions-table">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Preferences</th>
-                    <th>Notes</th>
-                    {% if event.is_finalized %}
-                    <th>Allocated</th>
+        <div class="card mb-lg">
+            <div class="page-header mb-0">
+                <div>
+                    <h1 class="mb-0">{{ event.name }}</h1>
+                    <div class="event-meta mt-md">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        {{ event.event_date|datetime }}
+                        <span class="status-badge status-{{ event.status }}">{{ event.status|capitalize }}</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    {% if event.is_open and (event.created_by == current_user.id or current_user.is_admin) %}
+                    <a href="{{ url_for('events.edit_event', event_id=event.id) }}" class="btn btn-secondary">Edit Event</a>
+                    <a href="{{ url_for('events.allocate', event_id=event.id) }}" class="btn btn-primary">Allocate Tickets</a>
+                    {% elif event.is_finalized and (event.created_by == current_user.id or current_user.is_admin) %}
+                    <form method="POST" action="{{ url_for('events.unfinalize_event', event_id=event.id) }}" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-warning" onclick="return confirm('Un-finalize this event to make adjustments?')">Un-finalize</button>
+                    </form>
                     {% endif %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for sub in submissions %}
-                {% set min_acceptable = get_min_acceptable(sub.preferences) %}
-                <tr class="{% if event.is_finalized %}{% if sub.allocated == 0 %}row-not-attending{% elif sub.allocated and sub.allocated < min_acceptable %}row-below-min{% endif %}{% endif %}">
-                    <td>{{ sub.user_name }}</td>
-                    <td>{{ sub.preferences.replace(',', ' → ') }}</td>
-                    <td>{{ sub.notes or '-' }}</td>
-                    {% if event.is_finalized %}
-                    <td><strong>{{ sub.allocated if sub.allocated is not none else '-' }}</strong></td>
-                    {% endif %}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <p class="no-submissions">No submissions yet.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-lg">
+            <div class="stats-bar">
+                <span><strong>{{ event.total_tickets }}</strong> Total Tickets</span>
+                <span>Created by <strong>{{ creator.name }}</strong></span>
+                {% if event.notes %}
+                <span>{{ event.notes }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if event.is_open %}
+        <div class="your-interest-bar">
+            {% if user_submission %}
+            {% set prefs = parse_preferences(user_submission.preferences) %}
+            {% set non_zero = prefs|select('greaterthan', 0)|list %}
+            <div class="interest-info" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <span class="interest-label">Your interest:</span>
+                <span class="interest-prefs">{{ non_zero|join(' → ') }} → 0</span>
+                {% if user_submission.notes %}<span class="interest-notes" title="{{ user_submission.notes }}">(has notes)</span>{% endif %}
+            </div>
+            <div class="interest-actions">
+                <a href="{{ url_for('events.submit_interest', event_id=event.id) }}" class="btn btn-secondary btn-sm">Edit</a>
+                <form method="POST" action="{{ url_for('events.withdraw_interest', event_id=event.id) }}" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Withdraw your interest?')">Withdraw</button>
+                </form>
+            </div>
+            {% else %}
+            <span class="interest-label">You haven't submitted interest yet.</span>
+            <a href="{{ url_for('events.submit_interest', event_id=event.id) }}" class="btn btn-primary btn-sm" style="margin-left: auto;">Submit Interest</a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="submissions-section">
+            <div class="section-header" style="justify-content: space-between; border-bottom: none; padding-bottom: 0;">
+                <h2 class="mt-0">All Submissions ({{ submissions|length }})</h2>
+                {% if event.is_open and event.created_by == current_user.id %}
+                <a href="{{ url_for('events.submit_for_user', event_id=event.id) }}" class="btn btn-secondary btn-sm">Add for User</a>
+                {% endif %}
+            </div>
+
+            {% if submissions %}
+            <div class="stats-bar">
+                <span><strong>{{ total_first_choice }}</strong> First Choice Total</span>
+                <span><strong>{{ total_min }}</strong> Minimum Total</span>
+                {% if event.is_finalized %}
+                <span><strong>{{ total_allocated }}</strong> Allocated</span>
+                {% endif %}
+            </div>
+
+            <div class="table-responsive">
+                <table class="submissions-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Preferences</th>
+                            <th>Notes</th>
+                            {% if event.is_finalized %}
+                            <th>Allocated</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sub in submissions %}
+                        {% set min_acceptable = get_min_acceptable(sub.preferences) %}
+                        <tr class="{% if event.is_finalized %}{% if sub.allocated == 0 %}row-not-attending{% elif sub.allocated and sub.allocated < min_acceptable %}row-below-min{% endif %}{% endif %}">
+                            <td>{{ sub.user_name }}</td>
+                            <td>{{ sub.preferences.replace(',', ' → ') }}</td>
+                            <td class="notes-cell">{{ sub.notes or '-' }}</td>
+                            {% if event.is_finalized %}
+                            <td><strong>{{ sub.allocated if sub.allocated is not none else '-' }}</strong></td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="no-submissions">No submissions yet.</p>
+            {% endif %}
+        </div>
+
+        {% if event.is_open and (event.created_by == current_user.id or current_user.is_admin) %}
+        <div class="danger-zone">
+            <h3>Danger Zone</h3>
+            <form method="POST" action="{{ url_for('events.cancel_event', event_id=event.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to cancel this event?')">Cancel Event</button>
+            </form>
+        </div>
         {% endif %}
     </div>
-
-    {% if event.is_open and (event.created_by == current_user.id or current_user.is_admin) %}
-    <div class="danger-zone">
-        <h3>Danger Zone</h3>
-        <form method="POST" action="{{ url_for('events.cancel_event', event_id=event.id) }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to cancel this event?')">Cancel Event</button>
-        </form>
-    </div>
-    {% endif %}
 </div>
 {% endblock %}

@@ -1,39 +1,61 @@
 {% extends "base.html" %}
 
-{% block title %}Login - Ticket Allocation{% endblock %}
+{% block title %}Login - {{ config.APP_NAME }}{% endblock %}
 
 {% block content %}
-<div class="auth-container">
-    <h1>Login</h1>
-    <form method="POST" class="form">
-        {{ form.hidden_tag() }}
-
-        <div class="form-group">
-            {{ form.email.label }}
-            {{ form.email(class="form-control", placeholder="you@company.com") }}
-            {% for error in form.email.errors %}
-            <span class="error">{{ error }}</span>
-            {% endfor %}
+<div class="page-wrapper page-wrapper--centered">
+    <div class="card auth-card">
+        <div class="card-header">
+            <svg class="ticket-icon" width="64" height="64" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <g transform="rotate(-15 40 40)">
+                    <rect x="12" y="25" width="56" height="30" rx="4" fill="#f39c12"/>
+                    <circle cx="12" cy="40" r="5" fill="#f5f7fa"/>
+                    <circle cx="68" cy="40" r="5" fill="#f5f7fa"/>
+                    <line x1="25" y1="25" x2="25" y2="55" stroke="#f5f7fa" stroke-width="2" stroke-dasharray="3 3"/>
+                </g>
+                <g transform="rotate(10 40 40)">
+                    <rect x="12" y="25" width="56" height="30" rx="4" fill="#3498db"/>
+                    <circle cx="12" cy="40" r="5" fill="#f5f7fa"/>
+                    <circle cx="68" cy="40" r="5" fill="#f5f7fa"/>
+                    <line x1="25" y1="25" x2="25" y2="55" stroke="#f5f7fa" stroke-width="2" stroke-dasharray="3 3"/>
+                    <text x="42" y="44" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="white" text-anchor="middle">ADMIT ONE</text>
+                </g>
+            </svg>
+            <h1>{{ config.APP_NAME }}</h1>
+            <p>Sign in to manage your tickets</p>
         </div>
 
-        <div class="form-group">
-            {{ form.password.label }}
-            {{ form.password(class="form-control") }}
-            {% for error in form.password.errors %}
-            <span class="error">{{ error }}</span>
-            {% endfor %}
+        <form method="POST">
+            {{ form.hidden_tag() }}
+
+            <div class="form-group">
+                {{ form.email.label }}
+                {{ form.email(class="form-control", placeholder="you@company.com") }}
+                {% for error in form.email.errors %}
+                <span class="error">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                {{ form.password.label }}
+                {{ form.password(class="form-control", placeholder="Enter your password") }}
+                {% for error in form.password.errors %}
+                <span class="error">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-group checkbox-group">
+                {{ form.remember_me(class="form-checkbox") }}
+                {{ form.remember_me.label }}
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+        </form>
+
+        <div class="card-footer">
+            <a href="{{ url_for('auth.forgot_password') }}">Forgot your password?</a>
+            <p>New user? Use forgot password to set up your account.</p>
         </div>
-
-        <div class="form-group checkbox-group">
-            {{ form.remember_me(class="form-checkbox") }}
-            {{ form.remember_me.label }}
-        </div>
-
-        <button type="submit" class="btn btn-primary btn-block">Login</button>
-    </form>
-
-    <p class="auth-link">
-        <a href="{{ url_for('auth.forgot_password') }}">Forgot password?</a> | New user? Set your password here too.
-    </p>
+    </div>
 </div>
 {% endblock %}

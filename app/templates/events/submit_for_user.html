@@ -3,55 +3,77 @@
 {% block title %}Submit Interest for User - {{ event.name }}{% endblock %}
 
 {% block content %}
-<div class="form-container">
-    <h1>Submit Interest for User</h1>
-    <p class="form-subtitle">{{ event.name }}</p>
+<style>
+    .preferences-summary {
+        background: #e8f4fd;
+        border: 2px solid var(--color-primary);
+        border-radius: var(--radius-md);
+        padding: var(--spacing-md);
+        margin: var(--spacing-md) 0;
+        text-align: center;
+    }
+    .preferences-summary strong { color: var(--color-gray-900); }
+    .preferences-summary span { color: #2980b9; font-weight: 600; }
+    input[name="preferences"] { display: none; }
+    .select-highlight {
+        border-color: #ffc107 !important;
+        box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.25) !important;
+    }
+</style>
 
-    <form method="POST" class="form" id="submissionForm">
-        {{ form.hidden_tag() }}
-        {{ form.preferences(id="preferencesInput") }}
-
-        <div class="form-group">
-            {{ form.user_id.label }}
-            {{ form.user_id(class="form-control") }}
-            {% for error in form.user_id.errors %}
-            <span class="error">{{ error }}</span>
-            {% endfor %}
+<div class="page-wrapper page-wrapper--centered">
+    <div class="card" style="max-width: 440px; width: 100%;">
+        <div class="card-header">
+            <h1>Submit Interest for User</h1>
+            <p>{{ event.name }}</p>
         </div>
 
-        <div id="preferencesContainer">
+        <form method="POST" id="submissionForm">
+            {{ form.hidden_tag() }}
+            {{ form.preferences(id="preferencesInput") }}
+
             <div class="form-group">
-                <label for="choice_0">How many tickets would they ideally like?</label>
-                <select id="choice_0" class="form-control preference-select" data-index="0">
-                    <option value="">Select...</option>
-                    {% for i in range(1, 9) %}
-                    <option value="{{ i }}">{{ i }}</option>
-                    {% endfor %}
-                </select>
+                {{ form.user_id.label }}
+                {{ form.user_id(class="form-control") }}
+                {% for error in form.user_id.errors %}
+                <span class="error">{{ error }}</span>
+                {% endfor %}
             </div>
-        </div>
 
-        <div id="preferencesSummary" class="preferences-summary" style="display: none;">
-            <strong>Preferences:</strong> <span id="summaryText"></span>
-        </div>
+            <div id="preferencesContainer">
+                <div class="form-group">
+                    <label for="choice_0">How many tickets would they ideally like?</label>
+                    <select id="choice_0" class="form-control preference-select" data-index="0">
+                        <option value="">Select...</option>
+                        {% for i in range(1, 9) %}
+                        <option value="{{ i }}">{{ i }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
 
-        {% for error in form.preferences.errors %}
-        <span class="error">{{ error }}</span>
-        {% endfor %}
+            <div id="preferencesSummary" class="preferences-summary" style="display: none;">
+                <strong>Preferences:</strong> <span id="summaryText"></span>
+            </div>
 
-        <div class="form-group">
-            {{ form.notes.label }}
-            {{ form.notes(class="form-control", rows=3, placeholder="e.g., It's their kid's birthday, first time seeing this team, etc.") }}
-            {% for error in form.notes.errors %}
+            {% for error in form.preferences.errors %}
             <span class="error">{{ error }}</span>
             {% endfor %}
-        </div>
 
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary" id="submitBtn" disabled>Submit Interest</button>
-            <a href="{{ url_for('events.event_detail', event_id=event.id) }}" class="btn btn-secondary">Cancel</a>
-        </div>
-    </form>
+            <div class="form-group">
+                {{ form.notes.label }}
+                {{ form.notes(class="form-control", rows=3, placeholder="e.g., It's their kid's birthday, first time seeing this team, etc.") }}
+                {% for error in form.notes.errors %}
+                <span class="error">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary" style="flex: 1;" id="submitBtn" disabled>Submit Interest</button>
+                <a href="{{ url_for('events.event_detail', event_id=event.id) }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}
 
@@ -67,21 +89,32 @@ const submitBtn = document.getElementById('submitBtn');
 function updatePreferencesInput() {
     preferencesInput.value = preferences.join(',');
 
+    // Remove highlight from all selects
+    container.querySelectorAll('.select-highlight').forEach(el => el.classList.remove('select-highlight'));
+
     if (preferences.length > 0 && preferences[preferences.length - 1] === 0) {
+        // Complete - show summary
         summaryDiv.style.display = 'block';
         const nonZero = preferences.filter(p => p > 0);
         summaryText.textContent = nonZero.join(' → ') + ' → 0 (won\'t attend)';
         submitBtn.disabled = false;
     } else {
+        // Incomplete - hide summary, highlight last select if user has started
         summaryDiv.style.display = 'none';
         submitBtn.disabled = true;
+
+        if (preferences.length > 0) {
+            const lastSelect = container.querySelector('.form-group:last-child select');
+            if (lastSelect && lastSelect.value === '') {
+                lastSelect.classList.add('select-highlight');
+            }
+        }
     }
 }
 
 function addNextChoice(afterIndex, maxValue) {
     const nextIndex = afterIndex + 1;
 
-    // Remove any existing choices after this one
     const existingChoices = container.querySelectorAll('.form-group');
     for (let i = existingChoices.length - 1; i > afterIndex; i--) {
         existingChoices[i].remove();
@@ -93,7 +126,6 @@ function addNextChoice(afterIndex, maxValue) {
         return;
     }
 
-    // If only option is 0, auto-select it
     if (maxValue === 1) {
         preferences[nextIndex] = 0;
         updatePreferencesInput();
@@ -125,7 +157,6 @@ function handleSelectChange(e) {
     const value = parseInt(select.value);
 
     if (isNaN(value)) {
-        // Reset everything after this
         preferences.length = index;
         const existingChoices = container.querySelectorAll('.form-group');
         for (let i = existingChoices.length - 1; i > index; i--) {
@@ -139,7 +170,6 @@ function handleSelectChange(e) {
     addNextChoice(index, value);
 }
 
-// Initialize first select
 document.getElementById('choice_0').addEventListener('change', handleSelectChange);
 </script>
 {% endblock %}

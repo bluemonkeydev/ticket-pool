@@ -3,82 +3,97 @@
 {% block title %}Allocate Tickets - {{ event.name }}{% endblock %}
 
 {% block content %}
-<div class="allocate-container">
-    <div class="page-header">
-        <h1>Allocate Tickets</h1>
-        <p class="form-subtitle">{{ event.name }}</p>
+<div class="page-wrapper">
+    <div class="page-container page-container--medium">
+        <a href="{{ url_for('events.event_detail', event_id=event.id) }}" class="back-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Back to Event
+        </a>
+
+        <div class="card mb-lg text-center">
+            <h1 class="mt-0">Allocate Tickets</h1>
+            <p class="text-muted mb-0">{{ event.name }}</p>
+        </div>
+
+        <div class="allocation-stats" id="stats">
+            <div class="stat-card">
+                <span class="stat-label">Available</span>
+                <span class="stat-value">{{ event.total_tickets }}</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Allocated</span>
+                <span class="stat-value" id="totalAllocated">{{ total_allocated }}</span>
+            </div>
+            <div class="stat-card" id="remainingCard">
+                <span class="stat-label">Remaining</span>
+                <span class="stat-value" id="remaining">{{ event.total_tickets - total_allocated }}</span>
+            </div>
+            <div class="stat-card stat-secondary">
+                <span class="stat-label">If All First Choice</span>
+                <span class="stat-value">{{ total_first_choice }}</span>
+            </div>
+            <div class="stat-card stat-secondary">
+                <span class="stat-label">If All Minimum</span>
+                <span class="stat-value">{{ total_min }}</span>
+            </div>
+        </div>
+
+        {% if submissions %}
+        <form method="POST" id="allocationForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" id="formAction" value="save">
+
+            <div class="card mb-lg">
+                <div class="table-responsive">
+                    <table class="allocation-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Preferences</th>
+                                <th>Notes</th>
+                                <th>Allocate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sub in submissions %}
+                            {% set min_acceptable = get_min_acceptable(sub.preferences) %}
+                            {% set first_choice = get_first_choice(sub.preferences) %}
+                            <tr id="row_{{ sub.id }}" class="allocation-row">
+                                <td>{{ sub.user_name }}</td>
+                                <td>{{ sub.preferences.replace(',', ' → ') }}</td>
+                                <td class="notes-cell">{{ sub.notes or '-' }}</td>
+                                <td>
+                                    <input type="number"
+                                           name="allocated_{{ sub.id }}"
+                                           class="allocation-input"
+                                           value="{{ sub.allocated if sub.allocated is not none else first_choice }}"
+                                           min="0"
+                                           max="{{ event.total_tickets }}"
+                                           data-min="{{ min_acceptable }}"
+                                           data-row-id="{{ sub.id }}">
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="form-actions" style="justify-content: center;">
+                <button type="submit" class="btn btn-secondary" onclick="document.getElementById('formAction').value='save'">Save Draft</button>
+                <button type="button" class="btn btn-primary" onclick="confirmFinalize()">Finalize Allocation</button>
+            </div>
+        </form>
+        {% else %}
+        <div class="card text-center">
+            <p class="text-muted">No submissions to allocate.</p>
+            <a href="{{ url_for('events.event_detail', event_id=event.id) }}" class="btn btn-secondary">Back to Event</a>
+        </div>
+        {% endif %}
     </div>
-
-    <div class="allocation-stats" id="stats">
-        <div class="stat-card">
-            <span class="stat-label">Available</span>
-            <span class="stat-value">{{ event.total_tickets }}</span>
-        </div>
-        <div class="stat-card">
-            <span class="stat-label">Allocated</span>
-            <span class="stat-value" id="totalAllocated">{{ total_allocated }}</span>
-        </div>
-        <div class="stat-card" id="remainingCard">
-            <span class="stat-label">Remaining</span>
-            <span class="stat-value" id="remaining">{{ event.total_tickets - total_allocated }}</span>
-        </div>
-        <div class="stat-card stat-secondary">
-            <span class="stat-label">If All First Choice</span>
-            <span class="stat-value">{{ total_first_choice }}</span>
-        </div>
-        <div class="stat-card stat-secondary">
-            <span class="stat-label">If All Minimum</span>
-            <span class="stat-value">{{ total_min }}</span>
-        </div>
-    </div>
-
-    {% if submissions %}
-    <form method="POST" id="allocationForm">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="action" id="formAction" value="save">
-
-        <table class="allocation-table">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Preferences</th>
-                    <th>Notes</th>
-                    <th>Allocate</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for sub in submissions %}
-                {% set min_acceptable = get_min_acceptable(sub.preferences) %}
-                {% set first_choice = get_first_choice(sub.preferences) %}
-                <tr id="row_{{ sub.id }}" class="allocation-row">
-                    <td>{{ sub.user_name }}</td>
-                    <td>{{ sub.preferences.replace(',', ' → ') }}</td>
-                    <td class="notes-cell">{{ sub.notes or '-' }}</td>
-                    <td>
-                        <input type="number"
-                               name="allocated_{{ sub.id }}"
-                               class="allocation-input"
-                               value="{{ sub.allocated if sub.allocated is not none else first_choice }}"
-                               min="0"
-                               max="{{ event.total_tickets }}"
-                               data-min="{{ min_acceptable }}"
-                               data-row-id="{{ sub.id }}">
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <div class="form-actions">
-            <button type="submit" class="btn btn-secondary" onclick="document.getElementById('formAction').value='save'">Save Draft</button>
-            <button type="button" class="btn btn-primary" onclick="confirmFinalize()">Finalize Allocation</button>
-            <a href="{{ url_for('events.event_detail', event_id=event.id) }}" class="btn btn-link">Back to Event</a>
-        </div>
-    </form>
-    {% else %}
-    <p class="no-submissions">No submissions to allocate.</p>
-    <a href="{{ url_for('events.event_detail', event_id=event.id) }}" class="btn btn-secondary">Back to Event</a>
-    {% endif %}
 </div>
 
 <div id="confirmModal" class="modal" style="display: none;">
@@ -105,7 +120,6 @@ function updateStats() {
         const val = parseInt(input.value) || 0;
         total += val;
 
-        // Highlight row based on allocation
         const row = document.getElementById('row_' + input.dataset.rowId);
         const minTickets = parseInt(input.dataset.min);
 
@@ -146,12 +160,10 @@ function submitFinalize() {
     document.getElementById('allocationForm').submit();
 }
 
-// Close modal when clicking outside
 document.getElementById('confirmModal').addEventListener('click', function(e) {
     if (e.target === this) closeModal();
 });
 
-// Initial calculation
 updateStats();
 </script>
 {% endblock %}

@@ -12,7 +12,12 @@
             <a href="{{ url_for('events.dashboard') }}">Ticket Allocation</a>
         </div>
         {% if current_user.is_authenticated %}
-        <div class="nav-links">
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <div class="nav-links" id="navLinks">
             <a href="{{ url_for('events.dashboard') }}">Dashboard</a>
             <a href="{{ url_for('events.create_event') }}">Create Event</a>
             {% if current_user.is_admin %}
@@ -41,6 +46,37 @@
     <footer class="footer">
         <p>&copy; {{ now().year if now is defined else 2024 }} Ticket Allocation App</p>
     </footer>
+
+    <script>
+    // Mobile navigation toggle
+    (function() {
+        const toggle = document.getElementById('navToggle');
+        const links = document.getElementById('navLinks');
+
+        if (toggle && links) {
+            toggle.addEventListener('click', function() {
+                toggle.classList.toggle('active');
+                links.classList.toggle('active');
+            });
+
+            // Close menu when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!toggle.contains(e.target) && !links.contains(e.target)) {
+                    toggle.classList.remove('active');
+                    links.classList.remove('active');
+                }
+            });
+
+            // Close menu when pressing Escape
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    toggle.classList.remove('active');
+                    links.classList.remove('active');
+                }
+            });
+        }
+    })();
+    </script>
 
     {% block scripts %}{% endblock %}
 </body>

@@ -1,49 +1,67 @@
 {% extends "base.html" %}
 
-{% block title %}Create Event - Ticket Allocation{% endblock %}
+{% block title %}Create Event - {{ config.APP_NAME }}{% endblock %}
 
 {% block content %}
-<div class="form-container">
-    <h1>Create Event</h1>
-    <form method="POST" class="form">
-        {{ form.hidden_tag() }}
-
-        <div class="form-group">
-            {{ form.name.label }}
-            {{ form.name(class="form-control", placeholder="e.g., Lakers vs. Celtics") }}
-            {% for error in form.name.errors %}
-            <span class="error">{{ error }}</span>
-            {% endfor %}
+{% set event_examples = [
+    "Stampede vs. Someone Who Will Lose",
+    "Canaries Game (Hot Dogs Included)",
+    "SculptureWalk: Touch the Art Challenge",
+    "Falls Park Ice Fishing Tournament",
+    "Downtown Parking Spot Championship",
+    "Skyforce vs. Gravity",
+    "JazzFest: Pretend You Know Jazz Night",
+    "Zoo Day: Penguin Staring Contest",
+    "Empire Mall Speed Walking Finals",
+    "Levitt Shell: Lawn Chair Territory Wars"
+] %}
+<div class="page-wrapper page-wrapper--centered">
+    <div class="card" style="max-width: 440px; width: 100%;">
+        <div class="card-header">
+            <h1>Create Event</h1>
+            <p>Set up a new ticket allocation event</p>
         </div>
 
-        <div class="form-group">
-            {{ form.event_date.label }}
-            {{ form.event_date(class="form-control") }}
-            {% for error in form.event_date.errors %}
-            <span class="error">{{ error }}</span>
-            {% endfor %}
-        </div>
+        <form method="POST">
+            {{ form.hidden_tag() }}
 
-        <div class="form-group">
-            {{ form.total_tickets.label }}
-            {{ form.total_tickets(class="form-control", placeholder="e.g., 10") }}
-            {% for error in form.total_tickets.errors %}
-            <span class="error">{{ error }}</span>
-            {% endfor %}
-        </div>
+            <div class="form-group">
+                {{ form.name.label }}
+                {{ form.name(class="form-control", placeholder="e.g., " ~ event_examples | random) }}
+                {% for error in form.name.errors %}
+                <span class="error">{{ error }}</span>
+                {% endfor %}
+            </div>
 
-        <div class="form-group">
-            {{ form.notes.label }}
-            {{ form.notes(class="form-control", rows=3, placeholder="Any additional information...") }}
-            {% for error in form.notes.errors %}
-            <span class="error">{{ error }}</span>
-            {% endfor %}
-        </div>
+            <div class="form-group">
+                {{ form.event_date.label }}
+                {{ form.event_date(class="form-control") }}
+                {% for error in form.event_date.errors %}
+                <span class="error">{{ error }}</span>
+                {% endfor %}
+            </div>
 
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Create Event</button>
-            <a href="{{ url_for('events.dashboard') }}" class="btn btn-secondary">Cancel</a>
-        </div>
-    </form>
+            <div class="form-group">
+                {{ form.total_tickets.label }}
+                {{ form.total_tickets(class="form-control", placeholder="e.g., 10") }}
+                {% for error in form.total_tickets.errors %}
+                <span class="error">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-group">
+                {{ form.notes.label }}
+                {{ form.notes(class="form-control", rows=3, placeholder="Any additional information...") }}
+                {% for error in form.notes.errors %}
+                <span class="error">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">Create Event</button>
+                <a href="{{ url_for('events.dashboard') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}

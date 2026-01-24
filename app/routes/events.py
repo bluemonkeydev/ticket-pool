@@ -27,7 +27,8 @@ def get_min_acceptable(pref_string):
 @login_required
 def dashboard():
     open_events = Event.get_all_open()
-    past_events = Event.get_all_past()
+    past_events = Event.get_all_past(limit=4)  # Only show last 4 on dashboard
+    total_past_count = len(Event.get_past_events_within_months(24))
 
     # Build a dict of creator info and stats for all events
     creators = {}
@@ -55,9 +56,40 @@ def dashboard():
     return render_template('events/dashboard.html',
                            open_events=open_events,
                            past_events=past_events,
+                           total_past_count=total_past_count,
                            creators=creators,
                            event_stats=event_stats,
                            user_submissions=user_submissions)
+
+
+@bp.route('/events/history')
+@login_required
+def event_history():
+    """Show all past events from the last 24 months in a table view."""
+    past_events = Event.get_past_events_within_months(24)
+
+    # Build creator info for all events
+    creators = {}
+    event_stats = {}
+
+    for event in past_events:
+        if event.created_by not in creators:
+            creator = User.get_by_id(event.created_by)
+            creators[event.created_by] = creator.name if creator else 'Unknown'
+
+        submissions = Submission.get_all_for_event(event.id)
+        total_requested = sum(get_first_choice(s['preferences']) for s in submissions)
+        total_allocated = sum(s['allocated'] or 0 for s in submissions)
+        event_stats[event.id] = {
+            'submission_count': len(submissions),
+            'total_requested': total_requested,
+            'total_allocated': total_allocated
+        }
+
+    return render_template('events/history.html',
+                           past_events=past_events,
+                           creators=creators,
+                           event_stats=event_stats)
 
 @bp.route('/events/create', methods=['GET', 'POST'])
 @login_required

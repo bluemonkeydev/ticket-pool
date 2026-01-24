@@ -1,53 +1,65 @@
 {% extends "base.html" %}
 
-{% block title %}Admin Panel - Ticket Allocation{% endblock %}
+{% block title %}Admin Panel - {{ config.APP_NAME }}{% endblock %}
 
 {% block content %}
-<div class="admin-panel">
-    <h1>Admin Panel</h1>
+<div class="page-wrapper">
+    <div class="page-container page-container--medium">
+        <a href="{{ url_for('events.dashboard') }}" class="back-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Back to Dashboard
+        </a>
 
-    <div class="admin-sections">
-        <section class="admin-section">
-            <div class="section-header">
-                <h2>Users ({{ users|length }})</h2>
-                <a href="{{ url_for('admin.users') }}" class="btn btn-secondary btn-sm">Manage Users</a>
-            </div>
-            <ul class="admin-list">
-                {% for user in users[:5] %}
-                <li>
-                    {{ user.name }}
-                    {% if user.is_admin %}<span class="badge badge-admin">Admin</span>{% endif %}
-                    {% if not user.is_active %}<span class="badge badge-inactive">Inactive</span>{% endif %}
-                </li>
-                {% endfor %}
-                {% if users|length > 5 %}
-                <li class="more-link">... and {{ users|length - 5 }} more</li>
-                {% endif %}
-            </ul>
-        </section>
+        <div class="card text-center mb-lg">
+            <h1 class="mt-0">Admin Panel</h1>
+        </div>
 
-        <section class="admin-section">
-            <div class="section-header">
-                <h2>Events ({{ events|length }})</h2>
-            </div>
-            <ul class="admin-list">
-                {% for event in events[:5] %}
-                <li>
-                    <a href="{{ url_for('events.event_detail', event_id=event.id) }}">{{ event.name }}</a>
-                    <span class="status-badge status-{{ event.status }}">{{ event.status }}</span>
-                    {% if current_user.is_admin %}
-                    <form method="POST" action="{{ url_for('admin.delete_event', event_id=event.id) }}" style="display: inline;">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn btn-danger btn-xs" onclick="return confirm('Delete this event?')">Delete</button>
-                    </form>
+        <div class="admin-sections">
+            <section class="admin-section">
+                <div class="section-header">
+                    <h2>Users ({{ users|length }})</h2>
+                    <a href="{{ url_for('admin.users') }}" class="btn btn-secondary btn-sm">Manage Users</a>
+                </div>
+                <ul class="admin-list">
+                    {% for user in users[:5] %}
+                    <li>
+                        {{ user.name }}
+                        {% if user.is_admin %}<span class="badge badge-admin">Admin</span>{% endif %}
+                        {% if not user.is_active %}<span class="badge badge-inactive">Inactive</span>{% endif %}
+                    </li>
+                    {% endfor %}
+                    {% if users|length > 5 %}
+                    <li class="more-link">... and {{ users|length - 5 }} more</li>
                     {% endif %}
-                </li>
-                {% endfor %}
-                {% if events|length > 5 %}
-                <li class="more-link">... and {{ events|length - 5 }} more</li>
-                {% endif %}
-            </ul>
-        </section>
+                </ul>
+            </section>
+
+            <section class="admin-section">
+                <div class="section-header">
+                    <h2>Events ({{ events|length }})</h2>
+                </div>
+                <ul class="admin-list">
+                    {% for event in events[:5] %}
+                    <li>
+                        <a href="{{ url_for('events.event_detail', event_id=event.id) }}">{{ event.name }}</a>
+                        <span class="status-badge status-{{ event.status }}">{{ event.status }}</span>
+                        {% if current_user.is_admin %}
+                        <form method="POST" action="{{ url_for('admin.delete_event', event_id=event.id) }}" style="display: inline; margin-left: auto;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-danger btn-xs" onclick="return confirm('Delete this event?')">Delete</button>
+                        </form>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                    {% if events|length > 5 %}
+                    <li class="more-link">... and {{ events|length - 5 }} more</li>
+                    {% endif %}
+                </ul>
+            </section>
+        </div>
     </div>
 </div>
 {% endblock %}

@@ -1,62 +1,159 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - Ticket Allocation{% endblock %}
+{% block title %}Dashboard - {{ config.APP_NAME }}{% endblock %}
 
 {% block content %}
-<div class="dashboard">
-    <div class="page-header">
-        <h1>Event Dashboard</h1>
-        <a href="{{ url_for('events.create_event') }}" class="btn btn-primary">Create Event</a>
-    </div>
+<div class="page-wrapper">
+    <div class="page-container">
+        <div class="page-header">
+            <h1>Event Dashboard</h1>
+            <a href="{{ url_for('events.create_event') }}" class="btn btn-primary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Create Event
+            </a>
+        </div>
 
-    <section class="events-section">
-        <h2>Open Events</h2>
-        {% if open_events %}
-        <div class="events-grid">
-            {% for event in open_events %}
-            <div class="event-card">
-                <h3><a href="{{ url_for('events.event_detail', event_id=event.id) }}">{{ event.name }}</a></h3>
-                <p class="event-date">{{ event.event_date|datetime }}</p>
-                <p class="event-tickets">
-                    {{ event_stats[event.id].total_requested }} requested / {{ event.total_tickets }} available
-                    {% if event_stats[event.id].total_requested > event.total_tickets %}
-                    <span class="oversubscribed">(oversubscribed)</span>
-                    {% endif %}
-                </p>
-                <p class="event-submissions">{{ event_stats[event.id].submission_count }} {% if event_stats[event.id].submission_count == 1 %}person{% else %}people{% endif %} interested</p>
-                <p class="event-creator">Created by {{ creators[event.created_by] }}</p>
-                <div class="event-card-footer">
-                    <span class="status-badge status-open">Open</span>
-                    {% if user_submissions[event.id] %}
-                    <span class="badge badge-submitted">You've submitted</span>
-                    {% else %}
-                    <span class="badge badge-not-submitted">Not submitted</span>
-                    {% endif %}
+        <section class="events-section">
+            <div class="section-header">
+                <h2>Open Events</h2>
+                {% if open_events %}
+                <span class="section-count">{{ open_events|length }}</span>
+                {% endif %}
+            </div>
+            {% if open_events %}
+            <div class="events-grid">
+                {% for event in open_events %}
+                <div class="event-card">
+                    <h3><a href="{{ url_for('events.event_detail', event_id=event.id) }}">{{ event.name }}</a></h3>
+
+                    <div class="event-meta">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        {{ event.event_date|datetime }}
+                    </div>
+
+                    <div class="event-meta event-creator">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        Created by {{ creators[event.created_by] }}
+                    </div>
+
+                    <div class="event-stats">
+                        <div class="stat-item">
+                            <div class="stat-value {% if event_stats[event.id].total_requested > event.total_tickets %}oversubscribed{% endif %}">
+                                {{ event_stats[event.id].total_requested }}
+                            </div>
+                            <div class="stat-label">Requested</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">{{ event.total_tickets }}</div>
+                            <div class="stat-label">Available</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">{{ event_stats[event.id].submission_count }}</div>
+                            <div class="stat-label">Interested</div>
+                        </div>
+                    </div>
+
+                    <div class="event-footer">
+                        <span class="status-badge status-open">Open</span>
+                        {% if user_submissions[event.id] %}
+                        <span class="submission-badge submitted">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            Submitted
+                        </span>
+                        {% else %}
+                        <span class="submission-badge not-submitted">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                            Not submitted
+                        </span>
+                        {% endif %}
+                    </div>
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <p class="no-events">No open events at this time.</p>
-        {% endif %}
-    </section>
+            {% else %}
+            <div class="no-events">
+                <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="12" y="25" width="56" height="30" rx="4" fill="#bdc3c7"/>
+                    <circle cx="12" cy="40" r="5" fill="#f5f7fa"/>
+                    <circle cx="68" cy="40" r="5" fill="#f5f7fa"/>
+                    <line x1="25" y1="25" x2="25" y2="55" stroke="#f5f7fa" stroke-width="2" stroke-dasharray="3 3"/>
+                </svg>
+                <p>No open events at this time.</p>
+            </div>
+            {% endif %}
+        </section>
 
-    <section class="events-section">
-        <h2>Past Events</h2>
-        {% if past_events %}
-        <div class="events-grid">
-            {% for event in past_events %}
-            <div class="event-card event-past">
-                <h3><a href="{{ url_for('events.event_detail', event_id=event.id) }}">{{ event.name }}</a></h3>
-                <p class="event-date">{{ event.event_date|datetime }}</p>
-                <p class="event-creator">Created by {{ creators[event.created_by] }}</p>
-                <span class="status-badge status-{{ event.status }}">{{ event.status|capitalize }}</span>
+        <section class="events-section">
+            <div class="section-header">
+                <h2>Past Events</h2>
+                {% if past_events %}
+                <span class="section-count">{{ past_events|length }}{% if total_past_count > 4 %} of {{ total_past_count }}{% endif %}</span>
+                {% endif %}
             </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <p class="no-events">No past events.</p>
-        {% endif %}
-    </section>
+            {% if past_events %}
+            <div class="events-grid">
+                {% for event in past_events %}
+                <div class="event-card event-past">
+                    <h3><a href="{{ url_for('events.event_detail', event_id=event.id) }}">{{ event.name }}</a></h3>
+
+                    <div class="event-meta">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        {{ event.event_date|datetime }}
+                    </div>
+
+                    <div class="event-meta event-creator">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        Created by {{ creators[event.created_by] }}
+                    </div>
+
+                    <div class="event-footer">
+                        <span class="status-badge status-{{ event.status }}">{{ event.status|capitalize }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% if total_past_count > 4 %}
+            <div class="view-all-wrapper">
+                <a href="{{ url_for('events.event_history') }}" class="btn-view-all">
+                    View All Past Events ({{ total_past_count }})
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </a>
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="no-events">
+                <p>No past events.</p>
+            </div>
+            {% endif %}
+        </section>
+    </div>
 </div>
 {% endblock %}

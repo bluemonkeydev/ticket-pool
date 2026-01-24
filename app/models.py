@@ -197,12 +197,26 @@ class Event:
         return [Event(**dict(row)) for row in rows]
 
     @staticmethod
-    def get_all_past():
+    def get_all_past(limit=None):
+        db = get_db()
+        query = '''SELECT * FROM events
+                   WHERE status IN ('finalized', 'cancelled')
+                   ORDER BY event_date DESC'''
+        if limit:
+            query += f' LIMIT {limit}'
+        rows = db.execute(query).fetchall()
+        return [Event(**dict(row)) for row in rows]
+
+    @staticmethod
+    def get_past_events_within_months(months=24):
+        """Get past events from the last N months."""
         db = get_db()
         rows = db.execute(
             '''SELECT * FROM events
                WHERE status IN ('finalized', 'cancelled')
-               ORDER BY event_date DESC'''
+               AND event_date >= date('now', ?)
+               ORDER BY event_date DESC''',
+            (f'-{months} months',)
         ).fetchall()
         return [Event(**dict(row)) for row in rows]
 
