@@ -8,16 +8,18 @@ A web application for managing event ticket requests and allocations. Administra
 - **Tiered Ticket Requests**: Users submit preferences (e.g., "I'd like 4 tickets, but would accept 2 or 1")
 - **Allocation Workflow**: Admins can review requests and allocate tickets before finalizing
 - **User Management**: Admin panel for managing users, roles, and account status
-- **Email Notifications**: Optional AWS SES integration for password reset and welcome emails
+- **Passwordless Authentication**: Secure magic link login via email (no passwords)
+- **Email Notifications**: AWS SES integration for login links and welcome emails
 - **Event History**: View all active and past events with statistics
+- **Mobile-First Design**: Responsive UI that works great on phones and tablets
 
 ## Tech Stack
 
 - **Backend**: Python 3.11, Flask 3.0
 - **Database**: SQLite
-- **Authentication**: Flask-Login with secure password hashing
+- **Authentication**: Passwordless magic links via Flask-Login
 - **Forms**: Flask-WTF with CSRF protection
-- **Email**: AWS SES (optional)
+- **Email**: AWS SES (required for authentication)
 - **Deployment**: Docker with Gunicorn
 
 ## Quick Start
@@ -72,11 +74,13 @@ Configure the app using environment variables or a `.env` file:
 | `DATABASE` | Path to SQLite database file | `./tickets.db` |
 | `APP_NAME` | Application display name | `Ticket Allocation` |
 | `APP_URL` | Base URL for email links | `http://localhost:5000` |
-| `MAIL_ENABLED` | Enable email sending | `false` |
+| `MAIL_ENABLED` | Enable email sending (required for login) | `false` |
 | `AWS_REGION` | AWS region for SES | `us-east-1` |
 | `AWS_ACCESS_KEY_ID` | AWS access key | - |
 | `AWS_SECRET_ACCESS_KEY` | AWS secret key | - |
 | `SES_SENDER_EMAIL` | Verified SES sender email | `noreply@example.com` |
+
+**Note**: Email must be enabled (`MAIL_ENABLED=true`) for users to log in. If disabled, login links are printed to the console (development only).
 
 ### Example `.env` file
 
@@ -107,6 +111,23 @@ SES_SENDER_EMAIL=tickets@yourcompany.com
 2. **Submit Request**: Enter tiered preferences (e.g., ideally 4, but would accept 2 or 1)
 3. **Add Notes**: Optionally explain your request
 4. **Check Status**: View your allocation once the event is finalized
+
+## Authentication
+
+This app uses **passwordless authentication** via magic links:
+
+1. **Admin creates user**: Enter name and email, user receives a welcome email with login link
+2. **User logs in**: Enter email address, receive a one-time login link via email
+3. **Magic link expires**: Links are valid for 15 minutes and can only be used once
+4. **Session duration**: Once logged in, sessions last for 1 year
+
+### Security Features
+
+- Tokens are cryptographically random and stored as SHA-256 hashes
+- Single-use tokens are invalidated immediately after use
+- Tokens expire after 15 minutes
+- Session cookies are HTTP-only and SameSite protected
+- HTTPS recommended for production (set `REMEMBER_COOKIE_SECURE=true`)
 
 ## Docker Commands
 

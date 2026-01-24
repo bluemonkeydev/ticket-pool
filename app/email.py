@@ -59,22 +59,21 @@ def send_email(to, subject, body_html, body_text=None):
         return False
 
 
-def send_password_reset_email(user, reset_url):
-    """Send a password reset email to the user."""
+def send_magic_link_email(user, login_url):
+    """Send a magic link login email to the user."""
     app_name = current_app.config.get('APP_NAME', 'Ticket Allocation')
 
-    subject = f"{app_name} - Password Reset"
+    subject = f"{app_name} - Your Login Link"
 
     body_html = f"""
     <html>
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-        <h2>Password Reset Request</h2>
+        <h2>Your Login Link</h2>
         <p>Hi {user.name},</p>
-        <p>We received a request to reset your password for {app_name}.</p>
-        <p>Click the link below to set a new password:</p>
-        <p><a href="{reset_url}" style="background-color: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a></p>
-        <p>Or copy this link: <a href="{reset_url}">{reset_url}</a></p>
-        <p>This link will expire in 1 hour.</p>
+        <p>Click the button below to log in to {app_name}:</p>
+        <p><a href="{login_url}" style="background-color: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Log In</a></p>
+        <p>Or copy this link: <a href="{login_url}">{login_url}</a></p>
+        <p>This link will expire in 15 minutes and can only be used once.</p>
         <p>If you didn't request this, you can safely ignore this email.</p>
         <br>
         <p>Thanks,<br>{app_name}</p>
@@ -83,15 +82,13 @@ def send_password_reset_email(user, reset_url):
     """
 
     body_text = f"""
-Password Reset Request
+Your Login Link
 
 Hi {user.name},
 
-We received a request to reset your password for {app_name}.
+Click here to log in to {app_name}: {login_url}
 
-Click here to set a new password: {reset_url}
-
-This link will expire in 1 hour.
+This link will expire in 15 minutes and can only be used once.
 
 If you didn't request this, you can safely ignore this email.
 
@@ -102,11 +99,11 @@ Thanks,
     return send_email(user.email, subject, body_html, body_text)
 
 
-def send_welcome_email(user, reset_url):
-    """Send a welcome email to a new user with password setup link."""
+def send_welcome_email(user, login_url):
+    """Send a welcome email to a new user with their first login link."""
     app_name = current_app.config.get('APP_NAME', 'Ticket Allocation')
 
-    subject = f"Welcome to {app_name} - Set Your Password"
+    subject = f"Welcome to {app_name}"
 
     body_html = f"""
     <html>
@@ -114,9 +111,10 @@ def send_welcome_email(user, reset_url):
         <h2>Welcome to {app_name}!</h2>
         <p>Hi {user.name},</p>
         <p>An account has been created for you at {app_name}.</p>
-        <p>Click the link below to set your password and get started:</p>
-        <p><a href="{reset_url}" style="background-color: #27ae60; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Set Your Password</a></p>
-        <p>Or copy this link: <a href="{reset_url}">{reset_url}</a></p>
+        <p>Click the button below to log in and get started:</p>
+        <p><a href="{login_url}" style="background-color: #27ae60; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Log In</a></p>
+        <p>Or copy this link: <a href="{login_url}">{login_url}</a></p>
+        <p>This link will expire in 15 minutes. After that, you can request a new one from the login page.</p>
         <br>
         <p>Thanks,<br>{app_name}</p>
     </body>
@@ -130,7 +128,9 @@ Hi {user.name},
 
 An account has been created for you at {app_name}.
 
-Click here to set your password and get started: {reset_url}
+Click here to log in and get started: {login_url}
+
+This link will expire in 15 minutes. After that, you can request a new one from the login page.
 
 Thanks,
 {app_name}

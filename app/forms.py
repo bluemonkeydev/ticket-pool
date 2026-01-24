@@ -1,35 +1,18 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, IntegerField, TextAreaField, DateTimeLocalField, SelectField, HiddenField
-from wtforms.validators import DataRequired, Email, Length, EqualTo, NumberRange, Optional, ValidationError
+from wtforms import StringField, BooleanField, IntegerField, TextAreaField, DateTimeLocalField, SelectField, HiddenField
+from wtforms.validators import DataRequired, Email, Length, NumberRange, Optional, ValidationError
 
 class LoginForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
-    password = PasswordField('Password', validators=[DataRequired()])
-    remember_me = BooleanField('Remember Me')
-
-class ChangePasswordForm(FlaskForm):
-    current_password = PasswordField('Current Password')
-    new_password = PasswordField('New Password', validators=[DataRequired(), Length(min=6)])
-    confirm_password = PasswordField('Confirm New Password', validators=[DataRequired(), EqualTo('new_password')])
 
 class AdminCreateUserForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(min=2, max=100)])
     email = StringField('Email', validators=[DataRequired(), Email()])
     is_admin = BooleanField('Administrator')
 
-
-class PasswordResetRequestForm(FlaskForm):
-    email = StringField('Email', validators=[DataRequired(), Email()])
-
-
-class PasswordResetForm(FlaskForm):
-    password = PasswordField('New Password', validators=[DataRequired(), Length(min=6)])
-    confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
-
 class UserForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(min=2, max=100)])
     email = StringField('Email', validators=[DataRequired(), Email()])
-    password = PasswordField('Password (leave blank to keep current)', validators=[Optional(), Length(min=6)])
     is_admin = BooleanField('Administrator')
     is_active = BooleanField('Active')
 

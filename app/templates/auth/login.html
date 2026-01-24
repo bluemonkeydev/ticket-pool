@@ -22,7 +22,7 @@
                 </g>
             </svg>
             <h1>{{ config.APP_NAME }}</h1>
-            <p>Sign in to manage your tickets</p>
+            <p>Enter your email to receive a login link</p>
         </div>
 
         <form method="POST">
@@ -36,25 +36,13 @@
                 {% endfor %}
             </div>
 
-            <div class="form-group">
-                {{ form.password.label }}
-                {{ form.password(class="form-control", placeholder="Enter your password") }}
-                {% for error in form.password.errors %}
-                <span class="error">{{ error }}</span>
-                {% endfor %}
-            </div>
-
-            <div class="form-group checkbox-group">
-                {{ form.remember_me(class="form-checkbox") }}
-                {{ form.remember_me.label }}
-            </div>
-
-            <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+            <button type="submit" class="btn btn-primary btn-block">Send Login Link</button>
         </form>
 
         <div class="card-footer">
-            <a href="{{ url_for('auth.forgot_password') }}">Forgot your password?</a>
-            <p>New user? Use forgot password to set up your account.</p>
+            <p class="text-muted" style="font-size: 0.875rem;">
+                A login link will be sent to your email address.
+            </p>
         </div>
     </div>
 </div>

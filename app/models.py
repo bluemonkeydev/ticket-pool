@@ -1,80 +1,65 @@
 from flask_login import UserMixin
-from werkzeug.security import generate_password_hash, check_password_hash
 from app.db import get_db
 from app import login_manager
 import secrets
+import hashlib
 from datetime import datetime, timedelta
 
 class User(UserMixin):
-    def __init__(self, id, name, email, password_hash, is_admin=False, is_active=True, must_reset_password=True, reset_token=None, reset_token_expires=None, created_at=None):
+    def __init__(self, id, name, email, password_hash=None, is_admin=False, is_active=True, must_reset_password=False, reset_token=None, reset_token_expires=None, created_at=None):
         self.id = id
         self.name = name
         self.email = email
-        self.password_hash = password_hash
         self.is_admin = bool(is_admin)
         self._is_active = bool(is_active)
-        self.must_reset_password = bool(must_reset_password)
-        self.reset_token = reset_token
-        self.reset_token_expires = reset_token_expires
         self.created_at = created_at
 
     @property
     def is_active(self):
         return self._is_active
 
-    @property
-    def needs_password_setup(self):
-        """Check if user needs to set up their password (no password hash)."""
-        return not self.password_hash
-
-    def check_password(self, password):
-        if not self.password_hash:
-            return False
-        return check_password_hash(self.password_hash, password)
-
     @staticmethod
     def create(name, email, is_admin=False):
-        """Create a new user without a password - they must use password reset."""
+        """Create a new user."""
         db = get_db()
-        # Generate a reset token so they can set their password
-        token = secrets.token_urlsafe(32)
-        expires = datetime.now() + timedelta(days=7)  # Token valid for 7 days
         cursor = db.execute(
-            '''INSERT INTO users (name, email, password_hash, is_admin, must_reset_password, reset_token, reset_token_expires)
-               VALUES (?, ?, NULL, ?, 1, ?, ?)''',
-            (name, email, is_admin, token, expires)
+            '''INSERT INTO users (name, email, is_admin, must_reset_password)
+               VALUES (?, ?, ?, 0)''',
+            (name, email, is_admin)
         )
         db.commit()
         return cursor.lastrowid
 
     @staticmethod
-    def generate_reset_token(user_id):
-        """Generate a password reset token for an existing user."""
+    def generate_login_token(user_id):
+        """Generate a magic link login token (15 min expiry)."""
         db = get_db()
         token = secrets.token_urlsafe(32)
-        expires = datetime.now() + timedelta(hours=24)  # Token valid for 24 hours
+        token_hash = hashlib.sha256(token.encode()).hexdigest()
+        expires = datetime.now() + timedelta(minutes=15)
         db.execute(
             'UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE id = ?',
-            (token, expires, user_id)
+            (token_hash, expires, user_id)
         )
         db.commit()
         return token
 
     @staticmethod
-    def get_by_reset_token(token):
-        """Find a user by their reset token if it's still valid."""
+    def get_by_login_token(token):
+        """Find a user by their login token if it's still valid."""
+        token_hash = hashlib.sha256(token.encode()).hexdigest()
         db = get_db()
         row = db.execute(
             'SELECT * FROM users WHERE reset_token = ? AND reset_token_expires > ?',
-            (token, datetime.now())
+            (token_hash, datetime.now())
         ).fetchone()
         if row:
             return User(**dict(row))
         return None
 
     @staticmethod
-    def clear_reset_token(user_id):
-        """Clear the reset token after password has been set."""
+    def clear_login_token(user_id):
+        """Clear the login token after use (single-use)."""
         db = get_db()
         db.execute(
             'UPDATE users SET reset_token = NULL, reset_token_expires = NULL WHERE id = ?',
@@ -111,7 +96,7 @@ class User(UserMixin):
         return [User(**dict(row)) for row in rows]
 
     @staticmethod
-    def update(user_id, name=None, email=None, is_admin=None, is_active=None, password=None, must_reset_password=None):
+    def update(user_id, name=None, email=None, is_admin=None, is_active=None):
         db = get_db()
         updates = []
         params = []
@@ -128,12 +113,6 @@ class User(UserMixin):
         if is_active is not None:
             updates.append('is_active = ?')
             params.append(is_active)
-        if password is not None:
-            updates.append('password_hash = ?')
-            params.append(generate_password_hash(password))
-        if must_reset_password is not None:
-            updates.append('must_reset_password = ?')
-            params.append(must_reset_password)
 
         if updates:
             params.append(user_id)

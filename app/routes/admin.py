@@ -48,9 +48,10 @@ def add_user():
             is_admin=form.is_admin.data
         )
         user = User.get_by_id(user_id)
-        reset_url = url_for('auth.reset_password', token=user.reset_token, _external=True)
-        send_welcome_email(user, reset_url)
-        flash('User created successfully. A welcome email has been sent with instructions to set their password.', 'success')
+        token = User.generate_login_token(user_id)
+        login_url = url_for('auth.verify_login', token=token, _external=True)
+        send_welcome_email(user, login_url)
+        flash('User created successfully. A welcome email has been sent with a login link.', 'success')
         return redirect(url_for('admin.users'))
     return render_template('admin/add_user.html', form=form)
 
@@ -78,17 +79,13 @@ def edit_user(user_id):
             flash('Email already in use by another user.', 'error')
             return render_template('admin/edit_user.html', form=form, user=user)
 
-        update_kwargs = {
-            'name': form.name.data,
-            'email': form.email.data.lower(),
-            'is_admin': form.is_admin.data,
-            'is_active': form.is_active.data
-        }
-
-        if form.password.data:
-            update_kwargs['password'] = form.password.data
-
-        User.update(user_id, **update_kwargs)
+        User.update(
+            user_id,
+            name=form.name.data,
+            email=form.email.data.lower(),
+            is_admin=form.is_admin.data,
+            is_active=form.is_active.data
+        )
         flash('User updated successfully.', 'success')
         return redirect(url_for('admin.users'))
 

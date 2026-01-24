@@ -35,7 +35,6 @@
                             <td>
                                 {{ user.name }}
                                 {% if user.is_admin %}<span class="badge badge-admin">Admin</span>{% endif %}
-                                {% if user.must_reset_password %}<span class="badge badge-pending">Pending Setup</span>{% endif %}
                             </td>
                             <td>{{ user.email }}</td>
                             <td>
