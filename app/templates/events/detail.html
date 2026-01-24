@@ -103,6 +103,9 @@
                             {% if event.is_finalized %}
                             <th>Allocated</th>
                             {% endif %}
+                            {% if event.is_open and event.created_by == current_user.id %}
+                            <th></th>
+                            {% endif %}
                         </tr>
                     </thead>
                     <tbody>
@@ -114,6 +117,11 @@
                             <td class="notes-cell">{{ sub.notes or '-' }}</td>
                             {% if event.is_finalized %}
                             <td><strong>{{ sub.allocated if sub.allocated is not none else '-' }}</strong></td>
+                            {% endif %}
+                            {% if event.is_open and event.created_by == current_user.id %}
+                            <td class="actions-cell">
+                                <a href="{{ url_for('events.edit_submission', event_id=event.id, submission_id=sub.id) }}" class="btn btn-secondary btn-xs">Edit</a>
+                            </td>
                             {% endif %}
                         </tr>
                         {% endfor %}

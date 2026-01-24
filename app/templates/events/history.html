@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Event History - {{ config.APP_NAME }}{% endblock %}
+{% block title %}All Events - {{ config.APP_NAME }}{% endblock %}
 
 {% block content %}
 <div class="page-wrapper">
     <div class="page-container">
         <div class="page-header">
-            <h1>Event History</h1>
+            <h1>All Events</h1>
             <a href="{{ url_for('events.dashboard') }}" class="btn btn-secondary">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                     <line x1="19" y1="12" x2="5" y2="12"></line>
@@ -16,10 +16,10 @@
             </a>
         </div>
 
-        <p class="text-muted mb-lg">Showing events from the last 24 months ({{ past_events|length }} events)</p>
+        <p class="text-muted mb-lg">Showing {{ active_events|length }} active and {{ past_events|length }} past events (last 24 months)</p>
 
         <div class="card">
-            {% if past_events %}
+            {% if active_events or past_events %}
             <div class="table-responsive">
                 <table class="submissions-table">
                     <thead>
@@ -34,6 +34,25 @@
                         </tr>
                     </thead>
                     <tbody>
+                        {% for event in active_events %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('events.event_detail', event_id=event.id) }}" style="color: var(--color-gray-900); text-decoration: none; font-weight: 500;">
+                                    {{ event.name }}
+                                </a>
+                            </td>
+                            <td>{{ event.event_date|datetime }}</td>
+                            <td>{{ creators[event.created_by] }}</td>
+                            <td><strong>{{ event.total_tickets }}</strong></td>
+                            <td><strong>{{ event_stats[event.id].total_requested }}</strong></td>
+                            <td><strong>{{ event_stats[event.id].total_allocated }}</strong></td>
+                            <td>
+                                <span class="status-badge status-{{ event.status }}">
+                                    {{ event.status|capitalize }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
                         {% for event in past_events %}
                         <tr>
                             <td>
@@ -58,7 +77,7 @@
             </div>
             {% else %}
             <div class="text-center" style="padding: 40px 16px;">
-                <p class="text-muted">No past events in the last 24 months.</p>
+                <p class="text-muted">No events found.</p>
             </div>
             {% endif %}
         </div>

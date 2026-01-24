@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Submission - {{ user.name }} - {{ event.name }}{% endblock %}
+
+{% block content %}
+<style>
+    .preferences-summary {
+        background: #e8f4fd;
+        border: 2px solid var(--color-primary);
+        border-radius: var(--radius-md);
+        padding: var(--spacing-md);
+        margin: var(--spacing-md) 0;
+        text-align: center;
+    }
+    .preferences-summary strong { color: var(--color-gray-900); }
+    .preferences-summary span { color: #2980b9; font-weight: 600; }
+    input[name="preferences"] { display: none; }
+    .select-highlight {
+        border-color: #ffc107 !important;
+        box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.25) !important;
+    }
+</style>
+
+<div class="page-wrapper page-wrapper--centered">
+    <div class="card" style="max-width: 440px; width: 100%;">
+        <div class="card-header">
+            <h1>Edit Submission</h1>
+            <p>{{ user.name }} &bull; {{ event.name }}</p>
+        </div>
+
+        <form method="POST" id="submissionForm">
+            {{ form.hidden_tag() }}
+            {{ form.preferences(id="preferencesInput") }}
+
+            <div id="preferencesContainer">
+                <div class="form-group">
+                    <label for="choice_0">How many tickets would they ideally like?</label>
+                    <select id="choice_0" class="form-control preference-select" data-index="0">
+                        <option value="">Select...</option>
+                        {% for i in range(1, 9) %}
+                        <option value="{{ i }}">{{ i }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div id="preferencesSummary" class="preferences-summary" style="display: none;">
+                <strong>Preferences:</strong> <span id="summaryText"></span>
+            </div>
+
+            {% for error in form.preferences.errors %}
+            <span class="error">{{ error }}</span>
+            {% endfor %}
+
+            <div class="form-group">
+                {{ form.notes.label }}
+                {{ form.notes(class="form-control", rows=3, placeholder="e.g., It's their kid's birthday, first time seeing this team, etc.") }}
+                {% for error in form.notes.errors %}
+                <span class="error">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary" style="flex: 1;" id="submitBtn" disabled>Update</button>
+                <a href="{{ url_for('events.event_detail', event_id=event.id) }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const preferences = [];
+const container = document.getElementById('preferencesContainer');
+const preferencesInput = document.querySelector('input[name="preferences"]');
+const summaryDiv = document.getElementById('preferencesSummary');
+const summaryText = document.getElementById('summaryText');
+const submitBtn = document.getElementById('submitBtn');
+
+const existingPrefs = "{{ submission.preferences }}".split(',').map(Number);
+
+function updatePreferencesInput() {
+    preferencesInput.value = preferences.join(',');
+
+    // Remove highlight from all selects
+    container.querySelectorAll('.select-highlight').forEach(el => el.classList.remove('select-highlight'));
+
+    if (preferences.length > 0 && preferences[preferences.length - 1] === 0) {
+        // Complete - show summary
+        summaryDiv.style.display = 'block';
+        const nonZero = preferences.filter(p => p > 0);
+        summaryText.textContent = nonZero.join(' → ') + ' → 0 (won\'t attend)';
+        submitBtn.disabled = false;
+    } else {
+        // Incomplete - hide summary, highlight last select if user has started
+        summaryDiv.style.display = 'none';
+        submitBtn.disabled = true;
+
+        if (preferences.length > 0) {
+            const lastSelect = container.querySelector('.form-group:last-child select');
+            if (lastSelect && lastSelect.value === '') {
+                lastSelect.classList.add('select-highlight');
+            }
+        }
+    }
+}
+
+function addNextChoice(afterIndex, maxValue) {
+    const nextIndex = afterIndex + 1;
+
+    const existingChoices = container.querySelectorAll('.form-group');
+    for (let i = existingChoices.length - 1; i > afterIndex; i--) {
+        existingChoices[i].remove();
+    }
+    preferences.length = afterIndex + 1;
+
+    if (maxValue === 0) {
+        updatePreferencesInput();
+        return;
+    }
+
+    if (maxValue === 1) {
+        preferences[nextIndex] = 0;
+        updatePreferencesInput();
+        return;
+    }
+
+    const div = document.createElement('div');
+    div.className = 'form-group';
+    div.innerHTML = `
+        <label for="choice_${nextIndex}">Their next choice is:</label>
+        <select id="choice_${nextIndex}" class="form-control preference-select" data-index="${nextIndex}">
+            <option value="">Select...</option>
+            ${Array.from({length: maxValue}, (_, i) => maxValue - 1 - i).map(v =>
+                `<option value="${v}">${v === 0 ? '0 (They won\'t attend if they can\'t get at least ' + preferences[preferences.length-1] + ')' : v}</option>`
+            ).join('')}
+        </select>
+    `;
+    container.appendChild(div);
+
+    const newSelect = div.querySelector('select');
+    newSelect.addEventListener('change', handleSelectChange);
+
+    updatePreferencesInput();
+}
+
+function handleSelectChange(e) {
+    const select = e.target;
+    const index = parseInt(select.dataset.index);
+    const value = parseInt(select.value);
+
+    if (isNaN(value)) {
+        preferences.length = index;
+        const existingChoices = container.querySelectorAll('.form-group');
+        for (let i = existingChoices.length - 1; i > index; i--) {
+            existingChoices[i].remove();
+        }
+        updatePreferencesInput();
+        return;
+    }
+
+    preferences[index] = value;
+    addNextChoice(index, value);
+}
+
+document.getElementById('choice_0').addEventListener('change', handleSelectChange);
+
+// Load existing preferences
+if (existingPrefs.length > 0) {
+    existingPrefs.forEach((pref, index) => {
+        if (index === 0) {
+            document.getElementById('choice_0').value = pref;
+            preferences[0] = pref;
+            if (pref > 0) {
+                addNextChoice(0, pref);
+            }
+        } else {
+            setTimeout(() => {
+                const select = document.getElementById(`choice_${index}`);
+                if (select) {
+                    select.value = pref;
+                    preferences[index] = pref;
+                    if (pref > 0) {
+                        addNextChoice(index, pref);
+                    } else {
+                        updatePreferencesInput();
+                    }
+                }
+            }, index * 10);
+        }
+    });
+}
+</script>
+{% endblock %}

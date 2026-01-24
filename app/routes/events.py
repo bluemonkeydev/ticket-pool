@@ -65,14 +65,16 @@ def dashboard():
 @bp.route('/events/history')
 @login_required
 def event_history():
-    """Show all past events from the last 24 months in a table view."""
+    """Show all active events and past events from the last 24 months in a table view."""
+    active_events = Event.get_all_open()
     past_events = Event.get_past_events_within_months(24)
+    all_events = active_events + past_events
 
     # Build creator info for all events
     creators = {}
     event_stats = {}
 
-    for event in past_events:
+    for event in all_events:
         if event.created_by not in creators:
             creator = User.get_by_id(event.created_by)
             creators[event.created_by] = creator.name if creator else 'Unknown'
@@ -87,6 +89,7 @@ def event_history():
         }
 
     return render_template('events/history.html',
+                           active_events=active_events,
                            past_events=past_events,
                            creators=creators,
                            event_stats=event_stats)
@@ -316,6 +319,48 @@ def unfinalize_event(event_id):
     Event.update(event_id, status='open', finalized_at=None)
     flash('Event has been un-finalized. You can now make adjustments.', 'success')
     return redirect(url_for('events.allocate', event_id=event_id))
+
+@bp.route('/events/<int:event_id>/edit-submission/<int:submission_id>', methods=['GET', 'POST'])
+@login_required
+def edit_submission(event_id, submission_id):
+    """Allow event creator to edit any user's submission."""
+    event = Event.get_by_id(event_id)
+    if not event:
+        flash('Event not found.', 'error')
+        return redirect(url_for('events.dashboard'))
+
+    # Only event creator can edit others' submissions
+    if event.created_by != current_user.id and not current_user.is_admin:
+        flash('Only the event creator can edit submissions.', 'error')
+        return redirect(url_for('events.event_detail', event_id=event_id))
+
+    if not event.is_open:
+        flash('This event is no longer accepting changes.', 'error')
+        return redirect(url_for('events.event_detail', event_id=event_id))
+
+    submission = Submission.get_by_id(submission_id)
+    if not submission or submission.event_id != event_id:
+        flash('Submission not found.', 'error')
+        return redirect(url_for('events.event_detail', event_id=event_id))
+
+    user = User.get_by_id(submission.user_id)
+    form = SubmissionForm()
+
+    if request.method == 'GET':
+        form.preferences.data = submission.preferences
+        form.notes.data = submission.notes
+
+    if form.validate_on_submit():
+        Submission.update(
+            submission_id,
+            preferences=form.preferences.data,
+            notes=form.notes.data
+        )
+        flash(f'Submission for {user.name} has been updated.', 'success')
+        return redirect(url_for('events.event_detail', event_id=event_id))
+
+    return render_template('events/edit_submission.html', event=event, form=form, user=user, submission=submission)
+
 
 @bp.route('/events/<int:event_id>/submit-for-user', methods=['GET', 'POST'])
 @login_required

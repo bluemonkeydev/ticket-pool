@@ -55,7 +55,7 @@
                     </li>
                     {% endfor %}
                     {% if events|length > 5 %}
-                    <li class="more-link">... and {{ events|length - 5 }} more</li>
+                    <li class="more-link"><a href="{{ url_for('events.event_history') }}">... and {{ events|length - 5 }} more</a></li>
                     {% endif %}
                 </ul>
             </section>
