@@ -21,5 +21,5 @@ class Config:
     AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
     AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
     SES_SENDER_EMAIL = os.environ.get('SES_SENDER_EMAIL', 'noreply@example.com')
-    APP_NAME = os.environ.get('APP_NAME', 'Ticket Allocation')
+    APP_NAME = os.environ.get('APP_NAME', 'Ticket Pool')
     APP_URL = os.environ.get('APP_URL', 'http://localhost:5000')

@@ -1,4 +1,4 @@
-# Ticket Allocation App
+# Ticket Pool
 
 A web application for managing event ticket requests and allocations. Administrators can create events, and users can submit ticket requests with tiered preferences. The system helps fairly distribute limited tickets among requesters.
 

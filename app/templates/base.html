@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Ticket Allocation{% endblock %}</title>
+    <title>{% block title %}{{ config.APP_NAME }}{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <nav class="navbar">
         <div class="nav-brand">
-            <a href="{{ url_for('events.dashboard') }}">Ticket Allocation</a>
+            <a href="{{ url_for('events.dashboard') }}">{{ config.APP_NAME }}</a>
         </div>
         {% if current_user.is_authenticated %}
         <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
@@ -44,7 +44,7 @@
     </main>
 
     <footer class="footer">
-        <p>&copy; {{ now().year if now is defined else 2024 }} Ticket Allocation App</p>
+        <p>&copy; {{ now().year if now is defined else 2024 }} {{ config.APP_NAME }}</p>
     </footer>
 
     <script>
