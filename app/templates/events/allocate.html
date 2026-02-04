@@ -86,6 +86,21 @@
                 <button type="submit" class="btn btn-secondary" onclick="document.getElementById('formAction').value='save'">Save Draft</button>
                 <button type="button" class="btn btn-primary" onclick="confirmFinalize()">Finalize Allocation</button>
             </div>
+
+            <div id="confirmModal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <h2>Finalize Allocation?</h2>
+                    <p>This will lock the allocation. You can choose whether to email participants.</p>
+                    <label class="checkbox-row">
+                        <input type="checkbox" name="send_emails" value="1" checked>
+                        Send allocation emails to participants
+                    </label>
+                    <div class="modal-actions">
+                        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                        <button class="btn btn-primary" onclick="submitFinalize()">Finalize</button>
+                    </div>
+                </div>
+            </div>
         </form>
         {% else %}
         <div class="card text-center">
@@ -96,16 +111,6 @@
     </div>
 </div>
 
-<div id="confirmModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <h2>Finalize Allocation?</h2>
-        <p>This will lock the allocation and notify all participants.</p>
-        <div class="modal-actions">
-            <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-            <button class="btn btn-primary" onclick="submitFinalize()">Finalize</button>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block scripts %}

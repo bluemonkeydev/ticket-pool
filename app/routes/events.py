@@ -227,15 +227,19 @@ def allocate(event_id):
         if action == 'finalize':
             Event.update(event_id, status='finalized', finalized_at=datetime.now())
 
-            # Send allocation emails to all participants
-            updated_submissions = Submission.get_all_for_event(event_id)
-            for sub in updated_submissions:
-                user = User.get_by_id(sub['user_id'])
-                if user:
-                    requested = get_first_choice(sub['preferences'])
-                    send_allocation_email(user, event, requested, sub['allocated'] or 0)
+            send_emails = request.form.get('send_emails') == '1'
 
-            flash('Allocations have been finalized and emails sent to participants.', 'success')
+            if send_emails:
+                # Send allocation emails to all participants
+                updated_submissions = Submission.get_all_for_event(event_id)
+                for sub in updated_submissions:
+                    user = User.get_by_id(sub['user_id'])
+                    if user:
+                        requested = get_first_choice(sub['preferences'])
+                        send_allocation_email(user, event, requested, sub['allocated'] or 0)
+                flash('Allocations have been finalized and emails sent to participants.', 'success')
+            else:
+                flash('Allocations have been finalized. Emails were not sent.', 'success')
             return redirect(url_for('events.event_detail', event_id=event_id))
         else:
             flash('Draft saved.', 'success')

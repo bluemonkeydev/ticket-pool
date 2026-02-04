@@ -1112,6 +1112,22 @@ select.form-control {
     margin: 0 0 var(--spacing-xl) 0;
 }
 
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    margin: 0 0 var(--spacing-lg) 0;
+    color: var(--color-gray-700);
+    font-size: var(--font-size-sm);
+}
+
+.checkbox-row input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--color-primary);
+}
+
 .modal-actions {
     display: flex;
     gap: var(--spacing-md);
