@@ -989,10 +989,10 @@ select.form-control {
 }
 
 .notes-cell {
-    max-width: 200px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    max-width: 320px;
+    min-width: 180px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
 }
 
 .actions-cell {
@@ -1501,7 +1501,8 @@ select.form-control {
     }
 
     .notes-cell {
-        max-width: 120px;
+        max-width: 200px;
+        min-width: 140px;
     }
 
     .submissions-table, .allocation-table, .users-table {
